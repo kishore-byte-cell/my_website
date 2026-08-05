@@ -29,6 +29,8 @@ sqlite_db.py – database storage and analytics queries
 summarize.py – summarization backend
 cache.py – cache management
 requirements.txt – dependencies
+
+
 Run Locally
 pip install -r requirements.txt
 streamlit run app.py
