@@ -1,0 +1,26 @@
+{
+  "asset_name": "USD/INR & Forex",
+  "category": "Currencies",
+  "feeds": [
+    {
+      "name": "Reuters Foreign Exchange",
+      "url": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+      "type": "news"
+    },
+    {
+      "name": "FXStreet Currency News",
+      "url": "https://www.fxstreet.com/rss/news",
+      "type": "forex"
+    },
+    {
+      "name": "Investing.com Forex News",
+      "url": "https://www.investing.com/rss/news_1.rss",
+      "type": "market"
+    },
+    {
+      "name": "Reserve Bank & Fed Economic Dispatches",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "type": "official"
+    }
+  ]
+}

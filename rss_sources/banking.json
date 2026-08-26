@@ -1,0 +1,26 @@
+{
+  "asset_name": "Banking Networks",
+  "category": "Financial Sector",
+  "feeds": [
+    {
+      "name": "Federal Reserve Monetary Policy & Banking",
+      "url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
+      "type": "official"
+    },
+    {
+      "name": "Reuters Banking & Financial Services",
+      "url": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+      "type": "news"
+    },
+    {
+      "name": "Wall Street Journal Banking News",
+      "url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+      "type": "analyst"
+    },
+    {
+      "name": "Financial Times Banking & Central Banks",
+      "url": "https://www.ft.com/banks?format=rss",
+      "type": "global"
+    }
+  ]
+}

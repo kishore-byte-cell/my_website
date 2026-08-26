@@ -82,6 +82,27 @@ def init_db():
         );
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS job_listings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT UNIQUE NOT NULL,
+            source TEXT NOT NULL,
+            title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            location TEXT NOT NULL,
+            description TEXT,
+            url TEXT NOT NULL,
+            posted_date TEXT,
+            stipend_salary TEXT DEFAULT 'Not Disclosed',
+            suitability_score INTEGER DEFAULT 0,
+            match_tier TEXT DEFAULT 'MEDIUM MATCH',
+            matched_skills TEXT,
+            missing_skills TEXT,
+            recommendation TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
     # Create Indexes for fast querying
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_category ON articles(category);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_published ON articles(published);")
@@ -89,6 +110,8 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_market_asset ON market_spot_prices(asset_name);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_market_range_asset ON market_forecast_ranges(asset_name);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_market_headline_asset ON market_headlines(asset_name);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_score ON job_listings(suitability_score);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_tier ON job_listings(match_tier);")
 
     conn.commit()
     conn.close()
@@ -124,6 +147,50 @@ def upsert_articles(articles):
 
     conn.commit()
     conn.close()
+
+def insert_user_article(title, summary, source="User Submission", category="World", link=None, media_url="", importance_score=8.0, related_events=""):
+    """
+    Insert a user-submitted article directly into the SQLite database.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if not link or not link.strip():
+        timestamp_slug = int(datetime.now(timezone.utc).timestamp())
+        unique_hash = abs(hash(title)) % 100000
+        link = f"user-sub://{timestamp_slug}_{unique_hash}"
+
+    published = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+    formatted_summary = summary.strip()
+    if related_events and related_events.strip() and related_events.lower() not in formatted_summary.lower():
+        formatted_summary += f"\n\n📌 Related Events Context: {related_events.strip()}"
+
+    cursor.execute("""
+        INSERT INTO articles (link, title, summary, source, category, published, media_url, importance_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(link) DO UPDATE SET
+            title = excluded.title,
+            summary = excluded.summary,
+            source = excluded.source,
+            category = excluded.category,
+            published = excluded.published,
+            media_url = excluded.media_url,
+            importance_score = excluded.importance_score;
+    """, (
+        link,
+        title,
+        formatted_summary,
+        source if source and source.strip() else "User Submission",
+        category,
+        published,
+        media_url,
+        importance_score
+    ))
+
+    conn.commit()
+    conn.close()
+    return link
 
 def get_articles(category=None, search_query=None, bookmarked_only=False, limit=50, sort_by="published"):
     """Query articles from database with optional filters and sorting."""
@@ -207,3 +274,106 @@ def get_source_analytics():
     rows = cursor.fetchall()
     conn.close()
     return {row['source']: row['count'] for row in rows}
+
+def get_user_interests():
+    """Retrieve category click counts from user_interests table."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT category, click_count FROM user_interests;")
+    rows = cursor.fetchall()
+    conn.close()
+    return {row['category']: row['click_count'] for row in rows}
+
+
+def upsert_job_listings(evaluated_jobs: list):
+    """Insert or update job listings in the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    for job in evaluated_jobs:
+        matched_str = ", ".join(job.get("matched_skills", [])) if isinstance(job.get("matched_skills"), list) else str(job.get("matched_skills", ""))
+        missing_str = ", ".join(job.get("missing_skills", [])) if isinstance(job.get("missing_skills"), list) else str(job.get("missing_skills", ""))
+        
+        cursor.execute("""
+            INSERT INTO job_listings (
+                job_id, source, title, company, location, description, url, posted_date,
+                stipend_salary, suitability_score, match_tier, matched_skills, missing_skills, recommendation
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(job_id) DO UPDATE SET
+                title = excluded.title,
+                company = excluded.company,
+                location = excluded.location,
+                description = excluded.description,
+                url = excluded.url,
+                stipend_salary = excluded.stipend_salary,
+                suitability_score = excluded.suitability_score,
+                match_tier = excluded.match_tier,
+                matched_skills = excluded.matched_skills,
+                missing_skills = excluded.missing_skills,
+                recommendation = excluded.recommendation;
+        """, (
+            job.get("id", job.get("job_id", f"job_{hash(job.get('title',''))}")),
+            job.get("source", "Web Scraper"),
+            job.get("title", job.get("job_title", "Software Intern")),
+            job.get("company", "Tech Company"),
+            job.get("location", "Remote"),
+            job.get("description", ""),
+            job.get("url", "#"),
+            job.get("posted_date", "2026-08-10"),
+            job.get("stipend_salary", "Not Disclosed"),
+            job.get("suitability_score", 70),
+            job.get("match_tier", "MEDIUM MATCH"),
+            matched_str,
+            missing_str,
+            job.get("recommendation", "")
+        ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_job_listings(match_tier: str = "All", min_score: int = 0, limit: int = 50) -> list:
+    """Query job listings from database with optional filters."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM job_listings WHERE suitability_score >= ?"
+    params = [min_score]
+
+    if match_tier and match_tier != "All":
+        query += " AND match_tier = ?"
+        params.append(match_tier)
+
+    query += " ORDER BY suitability_score DESC, created_at DESC LIMIT ?"
+    params.append(limit)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def get_job_stats() -> dict:
+    """Get aggregate job count and match tier breakdown."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) as total FROM job_listings;")
+    total = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as high_match FROM job_listings WHERE suitability_score >= 75;")
+    high_match = cursor.fetchone()["high_match"]
+
+    cursor.execute("SELECT AVG(suitability_score) as avg_score FROM job_listings;")
+    avg_row = cursor.fetchone()
+    avg_score = round(avg_row["avg_score"], 1) if avg_row and avg_row["avg_score"] is not None else 0.0
+
+    conn.close()
+    return {
+        "total": total,
+        "high_match": high_match,
+        "avg_score": avg_score
+    }
+
+

@@ -1,0 +1,26 @@
+{
+  "asset_name": "NVIDIA",
+  "category": "Technology Equity",
+  "feeds": [
+    {
+      "name": "Yahoo Finance NVDA News",
+      "url": "https://finance.yahoo.com/rss/headline?s=NVDA",
+      "type": "equity"
+    },
+    {
+      "name": "CNBC Semiconductor & Tech RSS",
+      "url": "https://search.cnbc.com/rs/search/combinedAsset/rss/search?term=NVIDIA&source=blended",
+      "type": "news"
+    },
+    {
+      "name": "Seeking Alpha Tech & Semiconductors",
+      "url": "https://seekingalpha.com/symbol/NVDA.xml",
+      "type": "analyst"
+    },
+    {
+      "name": "MarketWatch Technology News",
+      "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+      "type": "market"
+    }
+  ]
+}

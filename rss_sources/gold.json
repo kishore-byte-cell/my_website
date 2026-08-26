@@ -1,0 +1,26 @@
+{
+  "asset_name": "Gold",
+  "category": "Commodities",
+  "feeds": [
+    {
+      "name": "World Gold Council News",
+      "url": "https://www.gold.org/rss/news.xml",
+      "type": "official"
+    },
+    {
+      "name": "Reuters Commodities Gold Feed",
+      "url": "https://www.reutersagency.com/feed/?best-topics=commodities&post_type=best",
+      "type": "news"
+    },
+    {
+      "name": "MarketWatch Gold & Metals",
+      "url": "https://feeds.content.dowjones.io/public/rss/mw_bulletins",
+      "type": "market"
+    },
+    {
+      "name": "Investing.com Commodities RSS",
+      "url": "https://www.investing.com/rss/news_11.rss",
+      "type": "market"
+    }
+  ]
+}

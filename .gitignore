@@ -1,0 +1,29 @@
+# Python and Git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Local data (do not commit — contains personal info and cached data)
+news.db
+cache.json
+candidate_profile.json
+*.db
+*.sqlite
+
+# Assets (large binary files — users download separately)
+assets/
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
